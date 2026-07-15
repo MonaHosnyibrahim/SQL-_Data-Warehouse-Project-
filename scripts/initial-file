@@ -1,0 +1,63 @@
+/*==============================================================
+    SQL Data Warehouse Project
+    Script: Database Initialization
+    Description:
+    This script creates a new Data Warehouse database.
+    If the database already exists, it will be deleted and
+    recreated from scratch.
+===============================================================*/
+
+-- الانتقال إلى قاعدة البيانات الرئيسية (Master)
+-- لا يمكن حذف قاعدة بيانات ونحن متصلون بها.
+USE master;
+GO
+
+-- التحقق مما إذا كانت قاعدة البيانات موجودة بالفعل
+IF EXISTS (
+    SELECT 1
+    FROM sys.databases
+    WHERE name = 'DataWarehouse'
+)
+BEGIN
+
+    -- تحويل قاعدة البيانات إلى SINGLE_USER
+    -- وذلك لإغلاق أي اتصالات مفتوحة عليها حتى يمكن حذفها.
+    ALTER DATABASE DataWarehouse
+    SET SINGLE_USER
+    WITH ROLLBACK IMMEDIATE;
+
+    -- حذف قاعدة البيانات القديمة
+    DROP DATABASE DataWarehouse;
+
+END
+GO
+
+-- إنشاء قاعدة البيانات الجديدة
+CREATE DATABASE DataWarehouse;
+GO
+
+-- الانتقال إلى قاعدة البيانات الجديدة
+USE DataWarehouse;
+GO
+
+/*==============================================================
+    Create Schemas
+===============================================================*/
+
+-- إنشاء Bronze Schema
+-- يحتوي على البيانات الخام (Raw Data)
+-- بدون أي تعديل أو تنظيف.
+CREATE SCHEMA bronze;
+GO
+
+-- إنشاء Silver Schema
+-- يحتوي على البيانات بعد تنظيفها
+-- وإزالة التكرارات وتصحيح الأخطاء.
+CREATE SCHEMA silver;
+GO
+
+-- إنشاء Gold Schema
+-- يحتوي على البيانات النهائية الجاهزة للتحليل
+-- مثل Fact Tables و Dimension Tables.
+CREATE SCHEMA gold;
+GO
