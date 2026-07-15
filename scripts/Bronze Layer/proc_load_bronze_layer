@@ -1,0 +1,233 @@
+/*==============================================================
+    Stored Procedure: bronze.load_bronze
+    Description:
+    This stored procedure loads raw data from CSV files into the
+    Bronze Layer of the Data Warehouse.
+
+    Process:
+    1. Clear existing data from Bronze tables.
+    2. Load new data using BULK INSERT.
+    3. Measure loading time for each table.
+    4. Display total execution time.
+    5. Handle errors using TRY...CATCH.
+===============================================================*/
+
+-- Execute the procedure
+EXEC bronze.load_bronze;
+GO
+
+-- Create the procedure if it doesn't exist,
+-- otherwise alter the existing one.
+CREATE OR ALTER PROCEDURE bronze.load_bronze
+AS
+BEGIN
+
+    /*------------------------------------------
+        Declare Variables
+        Used to calculate execution time.
+    -------------------------------------------*/
+    DECLARE
+        @start_time DATETIME,
+        @end_time DATETIME,
+        @batch_start_time DATETIME,
+        @batch_end_time DATETIME;
+
+    BEGIN TRY
+
+        -- Record the start time of the entire ETL process
+        SET @batch_start_time = GETDATE();
+
+        PRINT '----------------------';
+        PRINT 'Loading Bronze Layer';
+        PRINT '----------------------';
+
+        /*==========================================================
+                        Load CRM Source Files
+        ==========================================================*/
+
+        PRINT '----------------------';
+        PRINT 'Loading Source_CRM';
+        PRINT '----------------------';
+
+        -------------------------------------------------------------
+        -- Load Customer Information
+        -------------------------------------------------------------
+        SET @start_time = GETDATE();
+
+        -- Remove old data before loading new records
+        TRUNCATE TABLE bronze.crm_cust_info;
+
+        -- Import Customer data from CSV file
+        BULK INSERT bronze.crm_cust_info
+        FROM 'G:\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_crm\cust_info.csv'
+        WITH
+        (
+            FIRSTROW = 2,             -- Skip header row
+            FIELDTERMINATOR = ',',    -- CSV separator
+            TABLOCK                   -- Improve loading performance
+        );
+
+        SET @end_time = GETDATE();
+
+        PRINT 'Loading Time:  '
+            + CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)
+            + ' Second';
+
+        PRINT '-----------------------------------------------------';
+
+        -------------------------------------------------------------
+        -- Load Product Information
+        -------------------------------------------------------------
+        SET @start_time = GETDATE();
+
+        TRUNCATE TABLE bronze.crm_prd_info;
+
+        BULK INSERT bronze.crm_prd_info
+        FROM 'G:\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_crm\prd_info.csv'
+        WITH
+        (
+            FIRSTROW = 2,
+            FIELDTERMINATOR = ',',
+            TABLOCK
+        );
+
+        SET @end_time = GETDATE();
+
+        PRINT 'Loading Time:  '
+            + CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)
+            + ' Second';
+
+        PRINT '-----------------------------------------------------';
+
+        -------------------------------------------------------------
+        -- Load Sales Details
+        -------------------------------------------------------------
+        SET @start_time = GETDATE();
+
+        TRUNCATE TABLE bronze.crm_sales_details;
+
+        BULK INSERT bronze.crm_sales_details
+        FROM 'G:\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_crm\sales_details.csv'
+        WITH
+        (
+            FIRSTROW = 2,
+            FIELDTERMINATOR = ',',
+            TABLOCK
+        );
+
+        SET @end_time = GETDATE();
+
+        PRINT 'Loading Time:  '
+            + CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)
+            + ' Second';
+
+        PRINT '-----------------------------------------------------';
+
+        /*==========================================================
+                        Load ERP Source Files
+        ==========================================================*/
+
+        PRINT '----------------------';
+        PRINT 'Loading Source_ERP';
+        PRINT '----------------------';
+
+        -------------------------------------------------------------
+        -- Load ERP Customer Data
+        -------------------------------------------------------------
+        SET @start_time = GETDATE();
+
+        TRUNCATE TABLE bronze.erp_cust_az12;
+
+        BULK INSERT bronze.erp_cust_az12
+        FROM 'G:\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_erp\cust_az12.csv'
+        WITH
+        (
+            FIRSTROW = 2,
+            FIELDTERMINATOR = ',',
+            TABLOCK
+        );
+
+        SET @end_time = GETDATE();
+
+        PRINT 'Loading Time:  '
+            + CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)
+            + ' Second';
+
+        PRINT '-----------------------------------------------------';
+
+        -------------------------------------------------------------
+        -- Load ERP Location Data
+        -------------------------------------------------------------
+        SET @start_time = GETDATE();
+
+        TRUNCATE TABLE bronze.erp_loc_a101;
+
+        BULK INSERT bronze.erp_loc_a101
+        FROM 'G:\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_erp\loc_a101.csv'
+        WITH
+        (
+            FIRSTROW = 2,
+            FIELDTERMINATOR = ',',
+            TABLOCK
+        );
+
+        SET @end_time = GETDATE();
+
+        PRINT 'Loading Time: '
+            + CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)
+            + ' Second';
+
+        PRINT '-----------------------------------------------------';
+
+        -------------------------------------------------------------
+        -- Load Product Category Data
+        -------------------------------------------------------------
+        SET @start_time = GETDATE();
+
+        TRUNCATE TABLE bronze.erp_px_cat_g1v2;
+
+        BULK INSERT bronze.erp_px_cat_g1v2
+        FROM 'G:\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_erp\px_cat_g1v2.csv'
+        WITH
+        (
+            FIRSTROW = 2,
+            FIELDTERMINATOR = ',',
+            TABLOCK
+        );
+
+        SET @end_time = GETDATE();
+
+        PRINT 'Loading Time: '
+            + CAST(DATEDIFF(SECOND,@start_time,@end_time) AS NVARCHAR)
+            + ' Second';
+
+        PRINT '-----------------------------------------------------';
+
+        /*------------------------------------------
+            Total ETL Execution Time
+        -------------------------------------------*/
+        SET @batch_end_time = GETDATE();
+
+        PRINT 'Total Loading Time: '
+            + CAST(DATEDIFF(SECOND,@batch_start_time,@batch_end_time) AS NVARCHAR)
+            + ' Second';
+
+        PRINT '-----------------------------------------------------';
+
+    END TRY
+
+    BEGIN CATCH
+
+        /*------------------------------------------
+            Error Handling
+        -------------------------------------------*/
+
+        PRINT '----------------------------------------------';
+        PRINT 'An Error Occurred During Loading Bronze Layer';
+        PRINT ERROR_MESSAGE();
+        PRINT '----------------------------------------------';
+
+    END CATCH
+
+END;
+GO
