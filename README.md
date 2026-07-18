@@ -290,16 +290,6 @@ This project provides answers to important business questions such as:
 - Conducted Year-over-Year and trend analysis.
 - Generated business insights to support decision-making.
 
----
-
-# 🚀 Future Improvements
-
-- Implement Incremental Loading instead of Full Load.
-- Integrate Azure Data Factory for orchestration.
-- Migrate the project to Databricks.
-- Store data in Delta Lake.
-- Build interactive Power BI dashboards.
-- Schedule ETL jobs using SQL Server Agent.
 
 ---
 
